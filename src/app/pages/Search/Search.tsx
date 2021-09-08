@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
+import { GENRES } from '../../../lib/genreMap';
 import Card from '../../components/Card/Card';
 import Header from '../../components/Header/Header';
 import Navigation from '../../components/Navigation/Navigation';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import TagGroup from '../../components/TagGroup/TagGroup';
 import useSearchMovies from '../../hooks/useSearchMovies';
-import { mockTagGroupProps } from './Mockdata';
 import styles from './Search.module.css';
 
 export default function Search(): JSX.Element {
   const [searchValue, setSearchValue] = useState('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const { data: movies } = useSearchMovies(searchQuery);
+  const { movies } = useSearchMovies(searchValue, activeTag);
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    setSearchQuery(searchValue);
-  }
+  const genres = Object.values(GENRES);
+  genres.sort();
+  const tags = genres.map((tag) => {
+    return {
+      children: tag,
+      onClick: () =>
+        tag !== activeTag ? setActiveTag(tag) : setActiveTag(null),
+      active: tag === activeTag,
+    };
+  });
 
   return (
     <div className={styles.page}>
@@ -28,17 +34,22 @@ export default function Search(): JSX.Element {
         className={styles.searchbar}
         searchValue={searchValue}
         setSearchValue={setSearchValue}
-        handleSubmit={handleSubmit}
+        handleSubmit={(event) => event.preventDefault()}
       />
 
-      <TagGroup className={styles.tagGroup} tagList={mockTagGroupProps} />
-      <p className={styles.searchResult}>Search Results(3)</p>
+      <TagGroup className={styles.tagGroup} tagList={tags} />
+      <p className={styles.searchResult}>
+        {movies && movies.length > 0
+          ? `Search Results (${movies.length})`
+          : 'No Results'}
+      </p>
 
       <main className={styles.cards}>
         {movies &&
           movies[0]?.title &&
           movies.map((movie) => (
             <Card
+              id={movie.id}
               key={movie.id}
               title={movie.title}
               rating={movie.rating}
